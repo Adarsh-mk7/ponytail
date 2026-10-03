@@ -200,17 +200,22 @@ os.chdir(r"${path.dirname(csvPath)}")
 # Capture print output
 import io
 _stdout = sys.stdout
-sys.stdout = io.StringIO()
+_buf = io.StringIO()
+sys.stdout = _buf
 
+_err = None
 try:
 ${patched.split('\n').map((l) => '    ' + l).join('\n')}
 except Exception as e:
+    _err = e
+finally:
     sys.stdout = _stdout
-    # If it needs sales.csv in cwd, write it there and retry
-    pass
 
-output = sys.stdout.getvalue()
-sys.stdout = _stdout
+if _err is not None:
+    sys.stderr.write("FAIL: exception: " + repr(_err) + "\\n")
+    sys.exit(1)
+
+output = _buf.getvalue()
 
 # Check output contains the number 351 (100.5 + 200.0 + 50.5)
 # Match as a standalone number (not as substring of e.g. 13510)
@@ -219,7 +224,7 @@ if re.search(r'(?<![\\d])351(?:\\.0)?(?![\\d])', output):
     print("PASS")
 else:
     # Try running it differently: maybe it defines a function
-    print("FAIL: output was: " + repr(output[:200]))
+    sys.stderr.write("FAIL: output was: " + repr(output[:200]) + "\\n")
     sys.exit(1)
 `;
     const f = tmpFile('.py', harness);

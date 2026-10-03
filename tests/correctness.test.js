@@ -106,6 +106,18 @@ test('csv: value containing 351 as substring fails (e.g. 13510)', () => {
   assert.equal(result.score, 0);
 });
 
+test('csv: runtime exception reports real error instead of harness AttributeError', () => {
+  const result = check(
+    "Write Python code that reads sales.csv and sums the 'amount' column.",
+    'python',
+    `raise RuntimeError("custom crash")`,
+  );
+  assert.equal(result.pass, false);
+  assert.equal(result.score, 0);
+  assert.match(result.reason, /custom crash/);
+  assert.doesNotMatch(result.reason, /TextIOWrapper/);
+});
+
 test('csv: timeout can be raised for slow pandas startup', () => {
   const previous = process.env.PONYTAIL_CORRECTNESS_TIMEOUT_MS;
   try {
